@@ -2,36 +2,75 @@ using UnityEngine;
 
 public class PlayerPOV : MonoBehaviour
 {
-    // パラメータ
-    public Transform neck;                  // プレイヤーの首のTransformを指定
-    public float sensitivity    = 2.0f;     // マウス感度（視点の移動の速さを調整）
-    public float minVertical    = -90.0f;   // 視点の最小角度（縦の回転制限）
-    public float maxVertical    = 90.0f;    // 視点の最大角度（縦の回転制限）
+    [Header("視点")]
+    public Transform neck;
+    public float sensitivity = 2.0f;
+    public float minVertical = -90.0f;
+    public float maxVertical = 90.0f;
 
-    // 演算用変数
-    private float rotationX     = 0f;       // 縦方向の回転角度（首の回転）
+    private float rotationX = 0f;
 
-    // ゲーム開始時に呼ばれる
+    [Header("傾き（Lean）")]
+    public float tiltAmount = 5f;
+    public float tiltSpeed = 8f;
+    private float currentTilt = 0f;
+
+    [Header("FOV")]
+    public Camera cam;
+    public float baseFov = 60f;
+    public float fovMultiplier = 10f;
+    public float fovSpeed = 5f;
+
+    [Header("ボブ（揺れ）")]
+    public float bobSpeed = 8f;
+    public float bobAmount = 0.05f;
+    private float bobTimer = 0f;
+
     void Start()
     {
-        // カーソルを非表示＆ロック
-        Cursor.lockState = CursorLockMode.Locked;   // カーソルを画面中央に固定
-        Cursor.visible = false;                     // カーソルを非表示にする
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
-    // 毎フレーム実行される
     void Update()
     {
-        // マウス入力の取得
-        float mouseX = Input.GetAxis("Mouse X") * sensitivity;  // 横のマウス移動量を取得し、感度で調整
-        float mouseY = Input.GetAxis("Mouse Y") * sensitivity;  // 縦のマウス移動量を取得し、感度で調整
+        // ===== マウス視点 =====
+        float mouseX = Input.GetAxis("Mouse X") * sensitivity;
+        float mouseY = Input.GetAxis("Mouse Y") * sensitivity;
 
-        // Player（体）の回転（左右）
-        transform.Rotate(0, mouseX, 0);   // プレイヤー（体）の左右の回転をマウスX方向の入力に合わせて行う
+        transform.Rotate(0, mouseX, 0);
 
-        // Neck（首）の回転（上下）
-        rotationX -= mouseY; // マウスY方向の入力によって縦方向の回転を更新
-        rotationX = Mathf.Clamp(rotationX, minVertical, maxVertical);   // 回転角度を指定された範囲に制限
-        neck.localRotation = Quaternion.Euler(rotationX, 0, 0);         // 首の回転を設定。縦方向のみ回転させる
+        rotationX -= mouseY;
+        rotationX = Mathf.Clamp(rotationX, minVertical, maxVertical);
+
+        // ===== ストレイフ傾き =====
+        float h = Input.GetAxis("Horizontal");
+        float targetTilt = -h * tiltAmount;
+        currentTilt = Mathf.Lerp(currentTilt, targetTilt, Time.deltaTime * tiltSpeed);
+
+        // ===== ボブ =====
+        float move = new Vector2(h, Input.GetAxis("Vertical")).magnitude;
+
+        Vector3 bobOffset = Vector3.zero;
+
+        if (move > 0.1f)
+        {
+            bobTimer += Time.deltaTime * bobSpeed;
+            float y = Mathf.Sin(bobTimer) * bobAmount;
+            bobOffset = new Vector3(0, y, 0);
+        }
+        else
+        {
+            bobTimer = 0f;
+        }
+
+        // ===== 最終的なカメラ回転・位置 =====
+        neck.localRotation = Quaternion.Euler(rotationX, 0, currentTilt);
+        neck.localPosition = Vector3.Lerp(neck.localPosition, bobOffset, Time.deltaTime * 10f);
+
+        // ===== FOV変化 =====
+        float speed = move;
+        float targetFov = baseFov + speed * fovMultiplier;
+        cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, targetFov, Time.deltaTime * fovSpeed);
     }
 }

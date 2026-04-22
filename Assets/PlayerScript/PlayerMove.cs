@@ -2,38 +2,46 @@ using UnityEngine;
 
 public class PlayerMove : MonoBehaviour
 {
-    // パラメータ
-    public float moveSpeed  = 5f;           // 移動速度
-    public float gravity    = -9.8f;        // 重力加速度
-    public CharacterController controller;  // 移動に使うCharacterController
+    [Header("移動")]
+    public float moveSpeed = 5f;
+    public CharacterController controller;
 
-    // 演算用変数
-    private Vector3 velocity;       // 加速度を保持する変数
-    private bool isGrounded;        // 地面に着地しているかどうかのフラグ変数
+    [Header("ジャンプ")]
+    public float jumpForce = 1.5f;
 
-    // ゲーム中実行されるUpdate関数
+    [Header("重力")]
+    public float gravity = -9.8f;
+
+    private Vector3 velocity;
+    private bool isGrounded;
+
     void Update()
     {
-        // 着地状態のチェック
-        isGrounded = controller.isGrounded;  
-        
-        // 着地している場合は落下速度をリセット
+        // ===== 接地判定 =====
+        isGrounded = controller.isGrounded;
+
         if (isGrounded && velocity.y < 0)
         {
-            velocity.y = -2f; // 地面に着いた場合、速度をリセット
+            velocity.y = -2f;
         }
 
-        // 入力の取得
+        // ===== 移動入力 =====
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
 
-        // ローカル座標をワールド座標に変換して移動方向を計算
-        Vector3 moveDirection = transform.TransformDirection(new Vector3(h, 0, v)) * moveSpeed;
+        Vector3 move = transform.TransformDirection(new Vector3(h, 0, v)) * moveSpeed;
 
-        // 重力を加算
+        // ===== ジャンプ =====
+        if (Input.GetButtonDown("Jump") && isGrounded)
+        {
+            // √(ジャンプ力 * -2 * 重力)
+            velocity.y = Mathf.Sqrt(jumpForce * -2f * gravity);
+        }
+
+        // ===== 重力 =====
         velocity.y += gravity * Time.deltaTime;
 
-        // 移動と重力を一度のcontroller.Moveで処理
-        controller.Move((moveDirection + velocity) * Time.deltaTime);
+        // ===== 移動適用 =====
+        controller.Move((move + velocity) * Time.deltaTime);
     }
 }
