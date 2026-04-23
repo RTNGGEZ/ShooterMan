@@ -501,8 +501,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 5
-  gravity: -9.8
   controller: {fileID: 1197144314}
+  jumpForce: 1.5
+  gravity: -9.8
 --- !u!143 &1197144314
 CharacterController:
   m_ObjectHideFlags: 0
@@ -564,7 +565,7 @@ MonoBehaviour:
   maxVertical: 90
   tiltAmount: 4
   tiltSpeed: 8
-  cam: {fileID: 0}
+  cam: {fileID: 963194227}
   baseFov: 60
   fovMultiplier: 10
   fovSpeed: 5
