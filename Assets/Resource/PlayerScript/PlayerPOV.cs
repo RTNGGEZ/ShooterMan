@@ -26,10 +26,15 @@ public class PlayerPOV : MonoBehaviour
     public float bobAmount = 0.05f;
     private float bobTimer = 0f;
 
+    private float defaultNeckY; // 追加
+
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        // エディタで設定した Neck の初期 Y 座標を記録しておく
+        defaultNeckY = neck.localPosition.y;
     }
 
     void Update()
@@ -64,11 +69,13 @@ public class PlayerPOV : MonoBehaviour
             bobTimer = 0f;
         }
 
-        // ===== 最終的なカメラ回転・位置 =====
         neck.localRotation = Quaternion.Euler(rotationX, 0, currentTilt);
-        neck.localPosition = Vector3.Lerp(neck.localPosition, bobOffset, Time.deltaTime * 10f);
 
-        // ===== FOV変化 =====
+        // bobOffset に初期の高さを加算した目標地点を作る
+        Vector3 targetPosition = new Vector3(0, defaultNeckY + bobOffset.y, 0); 
+        neck.localPosition = Vector3.Lerp(neck.localPosition, targetPosition, Time.deltaTime * 10f);
+
+            // ===== FOV変化 =====
         float speed = move;
         float targetFov = baseFov + speed * fovMultiplier;
         cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, targetFov, Time.deltaTime * fovSpeed);
